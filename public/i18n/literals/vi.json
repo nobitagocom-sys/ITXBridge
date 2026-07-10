@@ -255,5 +255,10 @@
   "Kept": "Giữ Lại",
   "Dropped/Lost": "Bỏ/Bị Mất",
   "General Principles": "Nguyên tắc chung",
-  "Back to Token Saver": "Quay lại Token Saver"
+  "Back to Token Saver": "Quay lại Token Saver",
+  "Running": "Đang chạy",
+  "Stopped": "Đã dừng",
+  "Start Server": "Bắt đầu máy chủ",
+  "Stop Server": "Dừng máy chủ",
+  "Enable DNS per tool below to activate interception": "Bật DNS cho các công cụ bên dưới để kích hoạt chặn"
 }

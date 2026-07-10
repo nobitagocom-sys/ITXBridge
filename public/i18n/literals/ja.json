@@ -255,5 +255,10 @@
   "Kept": "保持",
   "Dropped/Lost": "削除/消失",
   "General Principles": "一般原則",
-  "Back to Token Saver": "Token Saverに戻る"
+  "Back to Token Saver": "Token Saverに戻る",
+  "Running": "実行中",
+  "Stopped": "停止",
+  "Start Server": "サーバーを開始",
+  "Stop Server": "サーバーを停止",
+  "Enable DNS per tool below to activate interception": "以下のツールに対してDNSを有効にして、傍受をアクティブにします"
 }

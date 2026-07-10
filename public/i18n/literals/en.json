@@ -255,5 +255,10 @@
   "Kept": "Kept",
   "Dropped/Lost": "Dropped/Lost",
   "General Principles": "General Principles",
-  "Back to Token Saver": "Back to Token Saver"
+  "Back to Token Saver": "Back to Token Saver",
+  "Running": "Running",
+  "Stopped": "Stopped",
+  "Start Server": "Start Server",
+  "Stop Server": "Stop Server",
+  "Enable DNS per tool below to activate interception": "Enable DNS per tool below to activate interception"
 }

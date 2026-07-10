@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { Icon, Card, Button, Badge, Input } from "@/shared/components";
+import { T } from "@/i18n/T";
 
 const DEFAULT_MITM_ROUTER_BASE = "http://localhost:20127";
 
@@ -141,9 +142,9 @@ export default function MitmServerCard({ apiKeys, cloudEnabled, onStatusChange }
               <Icon name="security" size={20} className="text-primary" />
               <span className="font-semibold text-sm text-text-main">MITM Server</span>
               {isRunning ? (
-                <Badge variant="success" size="sm">Running</Badge>
+                <Badge variant="success" size="sm"><T>Running</T></Badge>
               ) : (
-                <Badge variant="default" size="sm">Stopped</Badge>
+                <Badge variant="default" size="sm"><T>Stopped</T></Badge>
               )}
             </div>
             <div className="flex flex-wrap items-center gap-1 text-xs text-text-muted" data-i18n-skip="true">
@@ -226,7 +227,7 @@ export default function MitmServerCard({ apiKeys, cloudEnabled, onStatusChange }
                 className="flex w-full items-center justify-center gap-1.5 rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-2 text-xs font-medium text-red-500 transition-colors hover:bg-red-500/20 disabled:opacity-50 sm:w-auto sm:py-1.5"
               >
                 <Icon name="stop_circle" size={16} />
-                Stop Server
+                <T>Stop Server</T>
               </button>
             ) : (
               <button
@@ -236,11 +237,11 @@ export default function MitmServerCard({ apiKeys, cloudEnabled, onStatusChange }
                 className="flex w-full items-center justify-center gap-1.5 rounded-lg border border-primary/30 bg-primary/10 px-4 py-2 text-xs font-medium text-primary transition-colors hover:bg-primary/20 disabled:opacity-50 sm:w-auto sm:py-1.5"
               >
                 <Icon name="play_circle" size={16} />
-                Start Server
+                <T>Start Server</T>
               </button>
             )}
             {isRunning && (
-              <p className="text-xs text-text-muted">Enable DNS per tool below to activate interception</p>
+              <p className="text-xs text-text-muted"><T>Enable DNS per tool below to activate interception</T></p>
             )}
           </div>
 

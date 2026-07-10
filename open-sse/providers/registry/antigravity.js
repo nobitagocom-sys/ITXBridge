@@ -44,8 +44,8 @@ export default {
       loadProjectApiUrl: "https://cloudcode-pa.googleapis.com/v1internal:loadCodeAssist",
       tokenUrl: "https://oauth2.googleapis.com/token",
     },
-    clientId: "YOUR_ANTIGRAVITY_CLIENT_ID",
-    clientSecret: "YOUR_ANTIGRAVITY_CLIENT_SECRET",
+    clientId: process.env.ANTIGRAVITY_OAUTH_CLIENT_ID || "YOUR_ANTIGRAVITY_CLIENT_ID",
+    clientSecret: process.env.ANTIGRAVITY_OAUTH_CLIENT_SECRET || "YOUR_ANTIGRAVITY_CLIENT_SECRET",
   },
   models: [
     { id: "gemini-3-flash-agent", name: "Gemini 3.5 Flash (High)" },

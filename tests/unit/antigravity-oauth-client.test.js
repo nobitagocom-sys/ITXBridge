@@ -2,12 +2,12 @@
 import { describe, it, expect } from "vitest";
 
 const EXPECTED = {
-  clientId: "YOUR_ANTIGRAVITY_CLIENT_ID",
-  clientSecret: "YOUR_ANTIGRAVITY_CLIENT_SECRET",
+  clientId: process.env.ANTIGRAVITY_OAUTH_CLIENT_ID || "YOUR_ANTIGRAVITY_CLIENT_ID",
+  clientSecret: process.env.ANTIGRAVITY_OAUTH_CLIENT_SECRET || "YOUR_ANTIGRAVITY_CLIENT_SECRET",
 };
 const GOOGLE = {
-  clientId: "YOUR_GEMINI_CLIENT_ID",
-  clientSecret: "YOUR_GEMINI_CLIENT_SECRET",
+  clientId: process.env.GEMINI_OAUTH_CLIENT_ID || "YOUR_GEMINI_CLIENT_ID",
+  clientSecret: process.env.GEMINI_OAUTH_CLIENT_SECRET || "YOUR_GEMINI_CLIENT_SECRET",
 };
 
 describe("antigravity oauth client (deduped)", () => {

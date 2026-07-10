@@ -56,12 +56,12 @@ export const ANTHROPIC_COMPAT_BASE = "https://api.anthropic.com/v1";
 
 // Antigravity OAuth client credentials (public CLI client — duplicated in usage.js + src/lib/oauth)
 export const ANTIGRAVITY_OAUTH_CLIENT = {
-  clientId: "YOUR_ANTIGRAVITY_CLIENT_ID",
-  clientSecret: "YOUR_ANTIGRAVITY_CLIENT_SECRET"
+  clientId: process.env.ANTIGRAVITY_OAUTH_CLIENT_ID || "YOUR_ANTIGRAVITY_CLIENT_ID",
+  clientSecret: process.env.ANTIGRAVITY_OAUTH_CLIENT_SECRET || "YOUR_ANTIGRAVITY_CLIENT_SECRET"
 };
 
 // Gemini (Google) OAuth client credentials (public CLI client — shared by gemini, gemini-cli, src/lib/oauth)
 export const GOOGLE_OAUTH_CLIENT = {
-  clientId: "YOUR_GEMINI_CLIENT_ID",
-  clientSecret: "YOUR_GEMINI_CLIENT_SECRET"
+  clientId: process.env.GEMINI_OAUTH_CLIENT_ID || "YOUR_GEMINI_CLIENT_ID",
+  clientSecret: process.env.GEMINI_OAUTH_CLIENT_SECRET || "YOUR_GEMINI_CLIENT_SECRET"
 };

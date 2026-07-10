@@ -27,8 +27,8 @@ export default {
       quotaUrl: "https://cloudcode-pa.googleapis.com/v1internal:retrieveUserQuota",
       loadCodeAssistUrl: "https://cloudcode-pa.googleapis.com/v1internal:loadCodeAssist",
     },
-    clientId: "YOUR_GEMINI_CLIENT_ID",
-    clientSecret: "YOUR_GEMINI_CLIENT_SECRET",
+    clientId: process.env.GEMINI_OAUTH_CLIENT_ID || "YOUR_GEMINI_CLIENT_ID",
+    clientSecret: process.env.GEMINI_OAUTH_CLIENT_SECRET || "YOUR_GEMINI_CLIENT_SECRET",
   },
   models: [
     { id: "gemini-3.1-pro-preview", name: "Gemini 3.1 Pro Preview" },

@@ -5,6 +5,7 @@ import Link from "next/link";
 import { Icon,  Card, Button, Input, Modal, Toggle } from "@/shared/components";
 import { useCopyToClipboard } from "@/shared/hooks/useCopyToClipboard";
 import { getCurrentLocale, onLocaleChange } from "@/i18n/runtime";
+import { DEFAULT_LOCALE } from "@/i18n/config";
 import {
   WENYAN_LOCALES,
   CAVEMAN_LEVELS,
@@ -29,7 +30,7 @@ export default function TokenSaverClient() {
   const [cavemanLevel, setCavemanLevel] = useState("full");
   const [ponytailEnabled, setPonytailEnabled] = useState(false);
   const [ponytailLevel, setPonytailLevel] = useState("full");
-  const [locale, setLocale] = useState("en");
+  const [locale, setLocale] = useState(DEFAULT_LOCALE);
 
   const { copied, copy } = useCopyToClipboard();
 

@@ -2,13 +2,23 @@
 
 import { useEffect } from "react";
 import { usePathname } from "next/navigation";
-import { initRuntimeI18n, reloadTranslations } from "./runtime";
+import { initRuntimeI18n, reloadTranslations, getCurrentLocale, onLocaleChange } from "./runtime";
 
 export function RuntimeI18nProvider({ children }) {
   const pathname = usePathname();
 
   useEffect(() => {
     initRuntimeI18n();
+  }, []);
+
+  useEffect(() => {
+    const updateHtmlLang = () => {
+      const locale = getCurrentLocale();
+      document.documentElement.lang = locale;
+    };
+
+    updateHtmlLang();
+    return onLocaleChange(updateHtmlLang);
   }, []);
 
   // Re-process DOM when route changes

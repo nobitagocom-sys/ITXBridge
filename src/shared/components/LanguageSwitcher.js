@@ -3,15 +3,15 @@ import { Icon } from "@/shared/components";
 
 import { useState, useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
-import { LOCALES, LOCALE_COOKIE, normalizeLocale } from "@/i18n/config";
+import { LOCALES, LOCALE_COOKIE, normalizeLocale, DEFAULT_LOCALE } from "@/i18n/config";
 import { reloadTranslations } from "@/i18n/runtime";
 
 function getLocaleFromCookie() {
-  if (typeof document === "undefined") return "en";
+  if (typeof document === "undefined") return DEFAULT_LOCALE;
   const cookie = document.cookie
     .split(";")
     .find((c) => c.trim().startsWith(`${LOCALE_COOKIE}=`));
-  const value = cookie ? decodeURIComponent(cookie.split("=")[1]) : "en";
+  const value = cookie ? decodeURIComponent(cookie.split("=")[1]) : DEFAULT_LOCALE;
   return normalizeLocale(value);
 }
 
@@ -26,7 +26,7 @@ const getLocaleInfo = (locale) => {
 };
 
 export default function LanguageSwitcher({ className = "", isOpen: controlledOpen, onClose, hideTrigger = false }) {
-  const [locale, setLocale] = useState("en");
+  const [locale, setLocale] = useState(DEFAULT_LOCALE);
   const [isPending, setIsPending] = useState(false);
   const [internalOpen, setInternalOpen] = useState(false);
   const modalRef = useRef(null);

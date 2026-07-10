@@ -87,7 +87,6 @@ function UsageContent() {
   );
 }
 
-// SSE throttling for SessionsTabContent — limit re-renders to every SSE_FLUSH_MS
 const SSE_FLUSH_MS = 2000;
 
 function SessionsTabContent({ period }) {
@@ -97,7 +96,8 @@ function SessionsTabContent({ period }) {
   // Fetch sessions via REST on mount and period change
   useEffect(() => {
     let cancelled = false;
-    queueMicrotask(() => { if (!cancelled) setLoading(true); });
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- show spinner on period change
+    setLoading(true);
     fetch(`/api/usage/sessions?period=${period}`)
       .then((r) => (r.ok ? r.json() : null))
       .then((data) => {
@@ -126,11 +126,9 @@ function SessionsTabContent({ period }) {
             sseBuffer.current = null;
             if (!buffered) return;
             setSessions((prev) => {
-              // Merge SSE active sessions with existing sessions
               const sseMap = new Map();
               for (const s of buffered) sseMap.set(s.sessionId, s);
 
-              // Update existing sessions that are in SSE data
               const merged = prev.map((s) => {
                 const updated = sseMap.get(s.sessionId);
                 if (updated) {
@@ -140,10 +138,8 @@ function SessionsTabContent({ period }) {
                 return s;
               });
 
-              // Add new sessions from SSE that weren't in prev
               for (const s of sseMap.values()) merged.push(s);
 
-              // Sort: active first, then by lastActivity desc
               merged.sort((a, b) => {
                 if (a.status === "active" && b.status !== "active") return -1;
                 if (a.status !== "active" && b.status === "active") return 1;

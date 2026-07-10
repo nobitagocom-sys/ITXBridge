@@ -20,30 +20,30 @@ export default {
   },
   models: [
     // LLMs & reasoning
-    { id: "DeepSeek-R1", name: "DeepSeek R1" },
-    { id: "DeepSeek-R1-Distill-Llama-70B", name: "DeepSeek R1 Distill Llama 70B" },
-    { id: "DeepSeek-R1-Distill-Llama-8B", name: "DeepSeek R1 Distill Llama 8B" },
-    { id: "DeepSeek-R1-Distill-Qwen-1.5B", name: "DeepSeek R1 Distill Qwen 1.5B" },
-    { id: "DeepSeek-R1-Distill-Qwen-32B", name: "DeepSeek R1 Distill Qwen 32B" },
-    { id: "Llama-3.1-8B-Instruct", name: "Llama 3.1 8B Instruct" },
+    { id: "DeepSeek-V4-Flash", name: "DeepSeek V4 Flash" },
+    { id: "Qwen3.6-27B", name: "Qwen 3.6 27B" },
+    { id: "GLM-5.1", name: "GLM 5.1" },
     { id: "Llama-3.3-70B-Instruct", name: "Llama 3.3 70B Instruct" },
-    { id: "Llama-3.3-Swallow-70B-Instruct-v0.4", name: "Llama 3.3 Swallow 70B Instruct" },
-    { id: "Llama-Guard-3-8B", name: "Llama Guard 3 8B" },
-    { id: "QwQ-32B", name: "QwQ 32B" },
-    { id: "Qwen2.5-7B-instruct", name: "Qwen 2.5 7B Instruct" },
-    { id: "Qwen2.5-Coder-32B-Instruct", name: "Qwen 2.5 Coder 32B Instruct" },
     { id: "SaoLa3.1-medium", name: "SaoLa 3.1 Medium" },
-    { id: "SaoLa-Llama3.1-planner", name: "SaoLa Llama 3.1 Planner" },
-    { id: "Llama-4-Scout-17B-16E", name: "Llama 4 Scout 17B" },
-    { id: "gpt-3.5-turbo-instruct", name: "GPT 3.5 Turbo Instruct" },
+    { id: "gemma-3-27b-it", name: "Gemma 3 27B" },
+    { id: "gemma-4-26B-A4B-it", name: "Gemma 4 26B (A4B)" },
+    { id: "gemma-4-31B-it", name: "Gemma 4 31B" },
+    { id: "gpt-oss-120b", name: "GPT OSS 120B" },
+    { id: "gpt-oss-20b", name: "GPT OSS 20B" },
     // Vision
     { id: "Qwen2.5-VL-7B-Instruct", name: "Qwen 2.5 VL 7B Instruct", kind: "imageToText" },
-    // Embedding
+    // STT (Speech-to-Text)
+    { id: "FPT.AI-whisper-large-v3-turbo", name: "FPT AI Whisper Large v3 Turbo", kind: "stt" },
+    { id: "FPT.AI-whisper-medium", name: "FPT AI Whisper Medium", kind: "stt" },
+    { id: "whisper-large-v3-turbo", name: "Whisper Large v3 Turbo", kind: "stt" },
+    // TTS (Text-to-Speech)
+    { id: "FPT.AI-VITs", name: "FPT AI VITs", kind: "tts" },
+    // Embedding & Reranker
     { id: "Vietnamese_Embedding", name: "Vietnamese Embedding", kind: "embedding" },
-    { id: "FPT.AI-e5-large", name: "FPT AI e5 Large", kind: "embedding" },
-    { id: "FPT.AI-gte-base", name: "FPT AI gte Base", kind: "embedding" },
+    { id: "bge-reranker-v2-m3", name: "BGE Reranker v2 M3", kind: "reranker" },
+    { id: "multilingual-e5-large", name: "Multilingual E5 Large", kind: "embedding" },
   ],
-  serviceKinds: ["llm", "embedding", "stt", "imageToText"],
+  serviceKinds: ["llm", "embedding", "stt", "tts", "imageToText", "reranker"],
   embeddingConfig: {
     baseUrl: "https://mkp-api.fptcloud.com/embeddings",
     authType: "apikey",

@@ -77,8 +77,12 @@ function aggregateEntryToDay(day, entry) {
   day.byAccount ||= {};
   day.byApiKey ||= {};
   day.byEndpoint ||= {};
+  day.byClientTool ||= {};
 
   if (entry.provider) addToCounter(day.byProvider, entry.provider, vals);
+
+  const clientTool = entry.clientTool || "Unknown";
+  addToCounter(day.byClientTool, clientTool, vals);
 
   const modelKey = entry.provider ? `${entry.model}|${entry.provider}` : entry.model;
   addToCounter(day.byModel, modelKey, { ...vals, meta: { rawModel: entry.model, provider: entry.provider } });
@@ -262,6 +266,109 @@ export function trackPendingRequest(model, provider, connectionId, started, erro
     console.log(`[${t}] [PENDING] ${started ? "START" : "END"}${error ? " (ERROR)" : ""} | provider=${provider} | model=${model}`);
   }
   scheduleStatsEvent("pending");
+}
+
+/**
+ * DB-free variant of getActiveRequests — used by SSE to avoid blocking the
+ * event loop while saveRequestUsage() holds the better-sqlite3 lock.
+ * Reads ONLY from global in-memory state; never touches the DB.
+ */
+export function getActiveRequestsFast() {
+  const activeRequests = [];
+  // Use a simple fallback for account names instead of querying the DB
+  const connectionMap = connCache.map; // use cached map, even if stale
+
+  for (const [connectionId, models] of Object.entries(pendingRequests.byAccount)) {
+    for (const [modelKey, count] of Object.entries(models)) {
+      if (count > 0) {
+        const accountName = connectionMap[connectionId] || `Account ${connectionId.slice(0, 8)}...`;
+        const match = modelKey.match(/^(.*) \((.*)\)$/);
+        activeRequests.push({
+          model: match ? match[1] : modelKey,
+          provider: match ? match[2] : "unknown",
+          account: accountName, count,
+        });
+      }
+    }
+  }
+
+  // Build active sessions list
+  const activeSessions = [];
+  for (const [sid, s] of Object.entries(pendingRequests.bySession)) {
+    if (s.count > 0) {
+      const meta = pendingSessions[sid] || {};
+      const models = Object.entries(s.models)
+        .filter(([, c]) => c > 0)
+        .map(([mk, c]) => {
+          const match = mk.match(/^(.*) \((.*)\)$/);
+          return { model: match ? match[1] : mk, provider: match ? match[2] : "unknown", count: c };
+        });
+      activeSessions.push({
+        sessionId: sid,
+        clientTool: meta.clientTool || null,
+        userId: meta.userId || (meta.connectionId ? connectionMap[meta.connectionId] : null) || null,
+        connectionId: meta.connectionId || null,
+        activeCount: s.count,
+        models: models.length > 0 ? models : [{ model: "unknown", provider: "unknown", count: s.count }],
+        totalRequests: meta.totalRequests || 0,
+        totalPromptTokens: meta.totalPromptTokens || 0,
+        totalCompletionTokens: meta.totalCompletionTokens || 0,
+        totalCost: meta.totalCost || 0,
+        lastActivity: meta.lastActivity || Date.now(),
+        firstSeen: meta.firstSeen || Date.now(),
+      });
+    }
+  }
+  // Include recently-idle sessions
+  const now = Date.now();
+  const RECENT_SESSION_TTL = 5 * 60 * 1000;
+  for (const [sid, meta] of Object.entries(pendingSessions)) {
+    if (!pendingRequests.bySession[sid] || pendingRequests.bySession[sid].count === 0) {
+      if (now - meta.lastActivity < RECENT_SESSION_TTL && meta.totalRequests > 0) {
+        activeSessions.push({
+          sessionId: sid,
+          clientTool: meta.clientTool || null,
+          userId: meta.userId || (meta.connectionId ? connectionMap[meta.connectionId] : null) || null,
+          connectionId: meta.connectionId || null,
+          activeCount: 0,
+          models: [],
+          totalRequests: meta.totalRequests || 0,
+          totalPromptTokens: meta.totalPromptTokens || 0,
+          totalCompletionTokens: meta.totalCompletionTokens || 0,
+          totalCost: meta.totalCost || 0,
+          lastActivity: meta.lastActivity || now,
+          firstSeen: meta.firstSeen || now,
+          idle: true,
+        });
+      }
+    }
+  }
+
+  // recentRequests — pure from ring, no DB init
+  const seen = new Set();
+  const recentRequests = [...recentRing.items]
+    .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp))
+    .map((e) => {
+      const t = e.tokens || {};
+      return {
+        timestamp: e.timestamp, model: e.model, provider: e.provider || "",
+        promptTokens: t.prompt_tokens || t.input_tokens || 0,
+        completionTokens: t.completion_tokens || t.output_tokens || 0,
+        status: e.status || "ok",
+      };
+    })
+    .filter((e) => {
+      if (e.promptTokens === 0 && e.completionTokens === 0) return false;
+      const minute = e.timestamp ? e.timestamp.slice(0, 16) : "";
+      const key = `${e.model}|${e.provider}|${e.promptTokens}|${e.completionTokens}|${minute}`;
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    })
+    .slice(0, 20);
+
+  const errorProvider = (Date.now() - lastErrorProvider.ts < 10000) ? lastErrorProvider.provider : "";
+  return { activeRequests, recentRequests, errorProvider, activeSessions };
 }
 
 export async function getActiveRequests() {
@@ -585,7 +692,7 @@ export async function getUsageStats(period = "all") {
   const stats = {
     totalRequests: 0,
     totalPromptTokens: 0, totalCompletionTokens: 0, totalCost: 0,
-    byProvider: {}, byModel: {}, byAccount: {}, byApiKey: {}, byEndpoint: {},
+    byProvider: {}, byModel: {}, byAccount: {}, byApiKey: {}, byEndpoint: {}, byClientTool: {},
     last10Minutes: [],
     pending: pendingRequests,
     activeRequests: [],
@@ -720,6 +827,17 @@ export async function getUsageStats(period = "all") {
         stats.byEndpoint[epKey].cost += ep.cost || 0;
         if (dateKey > (stats.byEndpoint[epKey].lastUsed || "")) stats.byEndpoint[epKey].lastUsed = dateKey;
       }
+
+      for (const [ct, c] of Object.entries(day.byClientTool || {})) {
+        if (!stats.byClientTool[ct]) {
+          stats.byClientTool[ct] = { requests: 0, promptTokens: 0, completionTokens: 0, cost: 0, clientTool: ct, lastUsed: dateKey };
+        }
+        stats.byClientTool[ct].requests += c.requests || 0;
+        stats.byClientTool[ct].promptTokens += c.promptTokens || 0;
+        stats.byClientTool[ct].completionTokens += c.completionTokens || 0;
+        stats.byClientTool[ct].cost += c.cost || 0;
+        if (dateKey > (stats.byClientTool[ct].lastUsed || "")) stats.byClientTool[ct].lastUsed = dateKey;
+      }
     }
 
     // Overlay precise lastUsed timestamps from history
@@ -759,7 +877,7 @@ export async function getUsageStats(period = "all") {
       cutoff = new Date(Date.now() - PERIOD_MS["24h"]).toISOString();
     }
     const filtered = db.all(
-      `SELECT timestamp, provider, model, connectionId, apiKey, endpoint, promptTokens, completionTokens, cost, tokens FROM usageHistory WHERE timestamp >= ?`,
+      `SELECT timestamp, provider, model, connectionId, apiKey, endpoint, clientTool, promptTokens, completionTokens, cost, tokens FROM usageHistory WHERE timestamp >= ?`,
       [cutoff]
     );
 
@@ -831,6 +949,34 @@ export async function getUsageStats(period = "all") {
       const epe = stats.byEndpoint[epKey];
       epe.requests++; epe.promptTokens += promptTokens; epe.completionTokens += completionTokens; epe.cost += entryCost;
       if (new Date(r.timestamp) > new Date(epe.lastUsed)) epe.lastUsed = r.timestamp;
+
+      // byClientTool
+      const ct = r.clientTool || "Unknown";
+      if (!stats.byClientTool[ct]) {
+        stats.byClientTool[ct] = { requests: 0, promptTokens: 0, completionTokens: 0, cost: 0, clientTool: ct, lastUsed: r.timestamp };
+      }
+      const cte = stats.byClientTool[ct];
+      cte.requests++; cte.promptTokens += promptTokens; cte.completionTokens += completionTokens; cte.cost += entryCost;
+      if (new Date(r.timestamp) > new Date(cte.lastUsed)) cte.lastUsed = r.timestamp;
+    }
+  }
+
+  // Merge real-time active session data into byClientTool so active agents
+  // appear immediately even before their requests are persisted to DB.
+  for (const s of activeSessions) {
+    const ct = s.clientTool || "Unknown";
+    if (!stats.byClientTool[ct]) {
+      stats.byClientTool[ct] = { requests: 0, promptTokens: 0, completionTokens: 0, cost: 0, clientTool: ct, lastUsed: null };
+    }
+    // Only overlay from sessions if they have MORE data than what DB already has.
+    // Use Math.max to avoid double-counting when both DB and memory have data.
+    const cte = stats.byClientTool[ct];
+    cte.requests = Math.max(cte.requests, s.totalRequests || 0);
+    cte.promptTokens = Math.max(cte.promptTokens, s.totalPromptTokens || 0);
+    cte.completionTokens = Math.max(cte.completionTokens, s.totalCompletionTokens || 0);
+    cte.cost = Math.max(cte.cost, s.totalCost || 0);
+    if (s.lastActivity && (!cte.lastUsed || s.lastActivity > new Date(cte.lastUsed).getTime())) {
+      cte.lastUsed = new Date(s.lastActivity).toISOString();
     }
   }
 

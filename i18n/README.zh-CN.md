@@ -45,7 +45,7 @@
 │  Your CLI   │  (Claude Code, Codex, Gemini CLI, OpenClaw, Cursor, Cline...)
 │   Tool      │
 └──────┬──────┘
-       │ http://localhost:201281
+       │ http://localhost:201271
        ↓
 ┌─────────────────────────────────────────┐
 │           ITXBridge (Smart Router)        │

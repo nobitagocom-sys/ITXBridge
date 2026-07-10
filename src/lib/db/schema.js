@@ -1,5 +1,5 @@
 // Latest schema version — bumped when a migration is added in ./migrations/
-export const SCHEMA_VERSION = 1;
+export const SCHEMA_VERSION = 2;
 
 export const PRAGMA_SQL = `
 PRAGMA journal_mode = WAL;
@@ -152,10 +152,40 @@ export const TABLES = {
       "CREATE INDEX IF NOT EXISTS idx_rd_conn ON requestDetails(connectionId)",
     ],
   },
+  teams: {
+    columns: {
+      id: "TEXT PRIMARY KEY",
+      name: "TEXT NOT NULL",
+      description: "TEXT",
+      createdAt: "TEXT NOT NULL",
+      updatedAt: "TEXT NOT NULL",
+    },
+    indexes: [
+      "CREATE INDEX IF NOT EXISTS idx_teams_name ON teams(name)",
+    ],
+  },
+  teamMembers: {
+    columns: {
+      id: "TEXT PRIMARY KEY",
+      teamId: "TEXT NOT NULL",
+      memberKey: "TEXT NOT NULL",
+      memberType: "TEXT NOT NULL",
+      memberName: "TEXT",
+      createdAt: "TEXT NOT NULL",
+    },
+    foreignKeys: [
+      "FOREIGN KEY (teamId) REFERENCES teams(id) ON DELETE CASCADE",
+    ],
+    indexes: [
+      "CREATE INDEX IF NOT EXISTS idx_tm_teamId ON teamMembers(teamId)",
+      "CREATE INDEX IF NOT EXISTS idx_tm_memberKey ON teamMembers(memberKey)",
+    ],
+  },
 };
 
 export function buildCreateTableSql(name, def) {
   const cols = Object.entries(def.columns).map(([k, v]) => `${k} ${v}`);
   if (def.primaryKey) cols.push(def.primaryKey);
+  if (def.foreignKeys) cols.push(...def.foreignKeys);
   return `CREATE TABLE IF NOT EXISTS ${name} (${cols.join(", ")})`;
 }

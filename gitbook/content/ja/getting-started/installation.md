@@ -264,7 +264,7 @@ Error: listen EADDRINUSE: address already in use :::20127
 **解決策1: 既存のプロセスを終了**
 
 ```bash
-# ポート20128を使用しているプロセスを検索
+# ポート20127を使用しているプロセスを検索
 lsof -i :20127
 
 # プロセスを終了

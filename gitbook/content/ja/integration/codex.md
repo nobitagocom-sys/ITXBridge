@@ -98,7 +98,7 @@ codex --model cx/gpt-5.1-codex-max "Explain what this code does: $(cat myfile.js
 
 1. ITXBridgeが動作中か確認: `curl http://localhost:20127/health`
 2. 環境変数が正しく設定されているか確認
-3. ファイアウォールがポート20128をブロックしていないか確認
+3. ファイアウォールがポート20127をブロックしていないか確認
 
 ### モデルが利用不可
 

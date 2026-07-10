@@ -53,6 +53,28 @@ function TimeAgo({ timestamp }) {
   return <>{timeAgo(timestamp)}</>;
 }
 
+// Agent / client-tool display mapping
+function getAgentLabel(clientTool) {
+  if (!clientTool) return "Unknown";
+  const map = {
+    claude: "Claude Code",
+    "claude-code": "Claude Code",
+    "claude-cli": "Claude CLI",
+    codex: "Codex",
+    "codex-cli": "Codex CLI",
+    "gemini-cli": "Gemini CLI",
+    antigravity: "Antigravity",
+    cursor: "Cursor",
+    "github-copilot": "GitHub Copilot",
+    "deepseek-tui": "DeepSeek TUI",
+    cody: "Cody",
+    windsurf: "Windsurf",
+    kiro: "Kiro",
+    copilot: "Copilot",
+  };
+  return map[clientTool] || map[clientTool.toLowerCase()] || clientTool;
+}
+
 function RecentRequests({ requests = [] }) {
   return (
     <Card className="flex min-w-0 flex-col overflow-hidden" padding="sm" style={{ height: 480 }}>
@@ -190,8 +212,15 @@ const ENDPOINT_COLUMNS = [
   { field: "lastUsed", label: "Last Used", align: "right" },
 ];
 
+const AGENT_COLUMNS = [
+  { field: "clientTool", label: "Agent" },
+  { field: "requests", label: "Requests", align: "right" },
+  { field: "lastUsed", label: "Last Used", align: "right" },
+];
+
 const TABLE_OPTIONS = [
   { value: "model", label: "Usage by Model" },
+  { value: "agent", label: "Usage by Agent" },
   { value: "account", label: "Usage by Account" },
   { value: "apiKey", label: "Usage by API Key" },
   { value: "endpoint", label: "Usage by Endpoint" },
@@ -212,7 +241,9 @@ export default function UsageStats({ period: periodProp, setPeriod: setPeriodPro
   const sortBy = searchParams.get("sortBy") || "rawModel";
   const sortOrder = searchParams.get("sortOrder") || "asc";
 
-  const [stats, setStats] = useState(null);
+  // Split state: heavy data (byModel, byAccount...) from REST; light data from SSE
+  const [stats, setStats] = useState(null);        // heavy: byModel, byAccount, etc.
+  const [live, setLive] = useState(null);           // light: activeRequests, recentRequests, etc.
   const [loading, setLoading] = useState(true);
   const [fetching, setFetching] = useState(false);
   const [tableView, setTableView] = useState("model");
@@ -222,6 +253,20 @@ export default function UsageStats({ period: periodProp, setPeriod: setPeriodPro
   const hasLoadedStats = useRef(false);
   const period = periodProp ?? periodLocal;
   const setPeriod = setPeriodProp ?? setPeriodLocal;
+
+  // Merge heavy + light for components that need both (cards, recent requests)
+  const all = useMemo(() => {
+    if (!stats) return null;
+    if (!live) return stats;
+    return {
+      ...stats,
+      activeRequests: live.activeRequests ?? stats.activeRequests,
+      recentRequests: live.recentRequests ?? stats.recentRequests,
+      errorProvider: live.errorProvider ?? stats.errorProvider,
+      pending: live.pending ?? stats.pending,
+      activeSessions: live.activeSessions ?? stats.activeSessions,
+    };
+  }, [stats, live]);
 
   // Fetch filtered stats via REST when period changes
   useEffect(() => {
@@ -248,10 +293,11 @@ export default function UsageStats({ period: periodProp, setPeriod: setPeriodPro
       });
   }, [period]);
 
-  // SSE connection — throttled to max 1 render per SSE_FLUSH_MS to avoid UI freezes
+  // SSE connection — throttled, updates ONLY live state (light data)
+  // Heavy data (byModel, byAccount...) stays unchanged between REST fetches
   const sseBuffer = useRef(null);
   const sseTimer = useRef(null);
-  const SSE_FLUSH_MS = 2000;
+  const SSE_FLUSH_MS = 1000;
   useEffect(() => {
     const es = new EventSource("/api/usage/stream");
 
@@ -265,17 +311,7 @@ export default function UsageStats({ period: periodProp, setPeriod: setPeriodPro
             const buffered = sseBuffer.current;
             sseBuffer.current = null;
             if (!buffered) return;
-            setStats((prev) => {
-              if (!prev) return prev;
-              return {
-                ...prev,
-                activeRequests: buffered.activeRequests,
-                recentRequests: buffered.recentRequests,
-                errorProvider: buffered.errorProvider,
-                pending: buffered.pending,
-                activeSessions: buffered.activeSessions,
-              };
-            });
+            setLive(buffered);
             if (hasLoadedStats.current) setLoading(false);
           }, SSE_FLUSH_MS);
         }
@@ -307,12 +343,13 @@ export default function UsageStats({ period: periodProp, setPeriod: setPeriodPro
     router.replace(`?${params.toString()}`, { scroll: false });
   }, [searchParams, router]);
 
-  // Compute active table data
+  // Compute active table data — pending from live (SSE), heavy data from stats (REST)
+  const pending = useMemo(() => live?.pending || stats?.pending || {}, [live, stats]);
   const activeTableConfig = useMemo(() => {
     if (!stats) return null;
     switch (tableView) {
       case "model": {
-        const pendingMap = stats.pending?.byModel || {};
+        const pendingMap = pending.byModel || {};
         return {
           columns: MODEL_COLUMNS,
           groupedData: groupDataByKey(sortData(stats.byModel, pendingMap, sortBy, sortOrder), "rawModel"),
@@ -335,11 +372,34 @@ export default function UsageStats({ period: periodProp, setPeriod: setPeriodPro
           ),
         };
       }
+      case "agent": {
+        const agentData = sortData(stats.byClientTool, {}, sortBy, sortOrder)
+          .map((item) => ({ ...item, clientTool: getAgentLabel(item.clientTool) }));
+        return {
+          columns: AGENT_COLUMNS,
+          groupedData: groupDataByKey(agentData, "clientTool"),
+          storageKey: "usage-stats:expanded-agents",
+          emptyMessage: "No agent usage recorded yet.",
+          renderSummaryCells: (group) => (
+            <>
+              <td className="px-6 py-3 text-right">{fmt(group.summary.requests)}</td>
+              <td className="px-6 py-3 text-right text-text-muted whitespace-nowrap">{fmtTime(group.summary.lastUsed)}</td>
+            </>
+          ),
+          renderDetailCells: (item) => (
+            <>
+              <td className="px-6 py-3 font-medium">{item.clientTool}</td>
+              <td className="px-6 py-3 text-right">{fmt(item.requests)}</td>
+              <td className="px-6 py-3 text-right text-text-muted whitespace-nowrap">{fmtTime(item.lastUsed)}</td>
+            </>
+          ),
+        };
+      }
       case "account": {
         const pendingMap = {};
         if (stats?.pending?.byAccount) {
           Object.entries(stats.byAccount || {}).forEach(([accountKey, data]) => {
-            const connPending = stats.pending.byAccount[data.connectionId];
+            const connPending = pending.byAccount[data.connectionId];
             if (connPending) {
               const modelKey = data.provider ? `${data.rawModel} (${data.provider})` : data.rawModel;
               pendingMap[accountKey] = connPending[modelKey] || 0;
@@ -422,7 +482,7 @@ export default function UsageStats({ period: periodProp, setPeriod: setPeriodPro
         };
       }
     }
-  }, [stats, tableView, sortBy, sortOrder]);
+  }, [stats, pending, tableView, sortBy, sortOrder]);
 
   if (!stats && !loading) return <div className="text-text-muted">Failed to load usage statistics.</div>;
 
@@ -456,11 +516,11 @@ export default function UsageStats({ period: periodProp, setPeriod: setPeriodPro
       )}
 
       {/* Overview cards */}
-      {loading ? spinner : <OverviewCards stats={stats} />}
+      {loading ? spinner : <OverviewCards stats={all} />}
 
       {/* Recent Requests */}
       {loading ? spinner : (
-        <RecentRequests requests={stats.recentRequests || []} />
+        <RecentRequests requests={all?.recentRequests || []} />
       )}
 
       {/* Token / Cost chart - sync period */}

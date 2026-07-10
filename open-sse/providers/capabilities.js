@@ -98,6 +98,31 @@ export const MODEL_CAPABILITIES = {
  * Provider-specific capability overrides. Keyed by provider alias/id.
  */
 export const PROVIDER_CAPABILITIES = {
+  // FPT AI — OpenAI-compatible API. Models are proxied through FPT's gateway
+  // which only accepts OpenAI-format params. Qwen-pattern models (Qwen3.6-27B,
+  // Qwen2.5-VL-7B-Instruct) must NOT use qwen-native enable_thinking/thinking_budget
+  // — the gateway rejects them with HTTP 400.
+  "fpt-ai": {
+    // Chat / LLM
+    "DeepSeek-V4-Flash":           { reasoning: true,  thinkingFormat: "openai", contextWindow: 200000, maxOutput: 64000 },
+    "Qwen3.6-27B":                 { reasoning: true,  thinkingFormat: "openai", contextWindow: 262144, maxOutput: 64000 },
+    "GLM-5.1":                     { reasoning: true,  thinkingFormat: "openai", contextWindow: 128000, maxOutput: 64000 },
+    "Llama-3.3-70B-Instruct":      { reasoning: false, contextWindow: 32000,  maxOutput: 64000 },
+    "SaoLa3.1-medium":             { reasoning: false, contextWindow: 32000,  maxOutput: 64000 },
+    "gemma-3-27b-it":              { vision: true,     reasoning: false, contextWindow: 128000, maxOutput: 64000 },
+    "gemma-4-26B-A4B-it":          { vision: true,     reasoning: false, contextWindow: 262144, maxOutput: 64000 },
+    "gemma-4-31B-it":              { vision: true,     reasoning: false, contextWindow: 262144, maxOutput: 64000 },
+    "gpt-oss-120b":                { reasoning: false, contextWindow: 128000, maxOutput: 64000 },
+    "gpt-oss-20b":                 { reasoning: false, contextWindow: 128000, maxOutput: 64000 },
+    // Vision
+    "Qwen2.5-VL-7B-Instruct":      { vision: true,     reasoning: false, contextWindow: 33000,  maxOutput: 64000 },
+    // Embedding
+    "Vietnamese_Embedding":        { tools: false,     contextWindow: 8000,   maxOutput: 0 },
+    "multilingual-e5-large":       { tools: false,     contextWindow: 8000,   maxOutput: 0 },
+    // Reranker
+    "bge-reranker-v2-m3":          { tools: false,     contextWindow: 8000,   maxOutput: 0 },
+  },
+
   // CodeBuddy.cn — authoritative per-model metadata from the gateway's model
   // config (contextWindow=maxInputTokens, maxOutput=maxOutputTokens, vision=
   // supportsImages). Every model reasons via OpenAI-style reasoning_effort

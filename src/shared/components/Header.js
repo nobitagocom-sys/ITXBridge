@@ -261,9 +261,7 @@ export default function Header({ onMenuClick, showMenuButton = true }) {
           </div>
         )}
         <HeaderSearch />
-        <ThemeToggle />
-        <HeaderLanguage />
-        <HeaderMenu onLogout={handleLogout} />
+        {/* Hidden: ThemeToggle, HeaderLanguage, HeaderMenu */}
       </div>
     </header>
   );

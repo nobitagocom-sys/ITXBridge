@@ -57,7 +57,7 @@ export {
 
 // Usage
 export {
-  statsEmitter, trackPendingRequest, getActiveRequests,
+  statsEmitter, trackPendingRequest, getActiveRequests, getActiveRequestsFast,
   saveRequestUsage, getUsageHistory, getUsageStats, getChartData,
   appendRequestLog, getRecentLogs, getSessions, cleanupStaleSessions,
 } from "./repos/usageRepo.js";
@@ -79,6 +79,8 @@ export async function exportDb() {
     proxyPools: db.all(`SELECT * FROM proxyPools`).map((r) => ({ ...parseJson(r.data, {}), id: r.id, isActive: r.isActive === 1, testStatus: r.testStatus, createdAt: r.createdAt, updatedAt: r.updatedAt })),
     apiKeys: db.all(`SELECT * FROM apiKeys`).map((r) => ({ id: r.id, key: r.key, name: r.name, machineId: r.machineId, isActive: r.isActive === 1, createdAt: r.createdAt })),
     combos: db.all(`SELECT * FROM combos`).map((r) => ({ id: r.id, name: r.name, kind: r.kind, models: parseJson(r.models, []), createdAt: r.createdAt, updatedAt: r.updatedAt })),
+    teams: db.all(`SELECT * FROM teams`).map((r) => ({ id: r.id, name: r.name, description: r.description, createdAt: r.createdAt, updatedAt: r.updatedAt })),
+    teamMembers: db.all(`SELECT * FROM teamMembers`).map((r) => ({ id: r.id, teamId: r.teamId, memberKey: r.memberKey, memberType: r.memberType, memberName: r.memberName, createdAt: r.createdAt })),
     modelAliases: {},
     customModels: [],
     mitmAlias: {},
@@ -107,6 +109,8 @@ export async function importDb(payload) {
     db.run(`DELETE FROM proxyPools`);
     db.run(`DELETE FROM apiKeys`);
     db.run(`DELETE FROM combos`);
+    db.run(`DELETE FROM teamMembers`);
+    db.run(`DELETE FROM teams`);
     db.run(`DELETE FROM kv WHERE scope IN ('modelAliases', 'customModels', 'mitmAlias', 'pricing')`);
 
     // Settings
@@ -147,6 +151,18 @@ export async function importDb(payload) {
         [c.id, c.name, c.kind || null, stringifyJson(c.models || []), c.createdAt || new Date().toISOString(), c.updatedAt || new Date().toISOString()]
       );
     }
+    for (const t of payload.teams || []) {
+      db.run(
+        `INSERT OR REPLACE INTO teams(id, name, description, createdAt, updatedAt) VALUES(?, ?, ?, ?, ?)`,
+        [t.id, t.name, t.description || null, t.createdAt || new Date().toISOString(), t.updatedAt || new Date().toISOString()]
+      );
+    }
+    for (const m of payload.teamMembers || []) {
+      db.run(
+        `INSERT OR REPLACE INTO teamMembers(id, teamId, memberKey, memberType, memberName, createdAt) VALUES(?, ?, ?, ?, ?, ?)`,
+        [m.id, m.teamId, m.memberKey, m.memberType, m.memberName || null, m.createdAt || new Date().toISOString()]
+      );
+    }
     for (const [a, m] of Object.entries(payload.modelAliases || {})) {
       db.run(`INSERT OR REPLACE INTO kv(scope, key, value) VALUES('modelAliases', ?, ?)`, [a, stringifyJson(m)]);
     }
@@ -164,6 +180,13 @@ export async function importDb(payload) {
 
   return await exportDb();
 }
+
+// Teams
+export {
+  getTeams, getTeamById, createTeam, updateTeam, deleteTeam,
+  getTeamMembers, addTeamMember, removeTeamMember,
+  getTeamUsage,
+} from "./repos/teamsRepo.js";
 
 // Eager init helper (optional)
 export async function initDb() {

@@ -112,6 +112,26 @@ export const MODEL_PRICING = {
   // === Misc ===
   "oswe-vscode-prime":            { input: 1.00,  output: 4.00,  cached: 0.50,  reasoning: 6.00,   cache_creation: 1.00  },
   "gpt-oss-120b-medium":          { input: 0.50,  output: 2.00,  cached: 0.25,  reasoning: 3.00,   cache_creation: 0.50  },
+
+  // === FPT AI ===
+  "DeepSeek-V4-Flash":                    { input: 0.14,  output: 0.28,  cached: 0.0028, reasoning: 0.28,   cache_creation: 0.14  },
+  "Qwen3.6-27B":                          { input: 0.30,  output: 2.75,  cached: 0.15,  reasoning: 4.125,  cache_creation: 0.30  },
+  "GLM-5.1":                              { input: 1.40,  output: 4.40,  cached: 0.70,  reasoning: 6.60,   cache_creation: 1.40  },
+  "Llama-3.3-70B-Instruct":               { input: 0.21,  output: 0.45,  cached: 0.105, reasoning: 0.675,  cache_creation: 0.21  },
+  "SaoLa3.1-medium":                      { input: 0.17,  output: 0.19,  cached: 0.085, reasoning: 0.285,  cache_creation: 0.17  },
+  "gemma-3-27b-it":                       { input: 0.11,  output: 0.17,  cached: 0.055, reasoning: 0.255,  cache_creation: 0.11  },
+  "gemma-4-26B-A4B-it":                   { input: 0.14,  output: 0.40,  cached: 0.07,  reasoning: 0.60,   cache_creation: 0.14  },
+  "gemma-4-31B-it":                       { input: 0.15,  output: 0.45,  cached: 0.075, reasoning: 0.675,  cache_creation: 0.15  },
+  "gpt-oss-120b":                         { input: 0.14,  output: 0.61,  cached: 0.07,  reasoning: 0.915,  cache_creation: 0.14  },
+  "gpt-oss-20b":                          { input: 0.05,  output: 0.20,  cached: 0.025, reasoning: 0.30,   cache_creation: 0.05  },
+  "Qwen2.5-VL-7B-Instruct":               { input: 0.77,  output: 0.77,  cached: 0.385, reasoning: 1.155,  cache_creation: 0.77  },
+  "FPT.AI-whisper-large-v3-turbo":        { input: 0.03,  output: 0.00,  cached: 0.00,  reasoning: 0.00,   cache_creation: 0.03  },
+  "FPT.AI-whisper-medium":                { input: 0.02,  output: 0.00,  cached: 0.00,  reasoning: 0.00,   cache_creation: 0.02  },
+  "whisper-large-v3-turbo":               { input: 0.00,  output: 0.00,  cached: 0.00,  reasoning: 0.00,   cache_creation: 0.00  },
+  "FPT.AI-VITs":                          { input: 16.50, output: 0.00,  cached: 0.00,  reasoning: 0.00,   cache_creation: 16.50 },
+  "Vietnamese_Embedding":                 { input: 0.01,  output: 0.00,  cached: 0.00,  reasoning: 0.00,   cache_creation: 0.01  },
+  "bge-reranker-v2-m3":                   { input: 0.02,  output: 0.00,  cached: 0.00,  reasoning: 0.00,   cache_creation: 0.02  },
+  "multilingual-e5-large":                { input: 0.02,  output: 0.00,  cached: 0.00,  reasoning: 0.00,   cache_creation: 0.02  },
   "vision-model":                 { input: 1.50,  output: 6.00,  cached: 0.75,  reasoning: 9.00,   cache_creation: 1.50  },
   "coder-model":                  { input: 1.50,  output: 6.00,  cached: 0.75,  reasoning: 9.00,   cache_creation: 1.50  },
 };

@@ -57,11 +57,11 @@ export function onLocaleChange(callback) {
 // Process text node
 function processTextNode(node) {
   if (!node.nodeValue || !node.nodeValue.trim()) return;
-  
+
   // Skip if parent is script, style, code, or structural elements
   const parent = node.parentElement;
   if (!parent) return;
-  
+
   // Skip if parent or any ancestor has data-i18n-skip attribute
   let element = parent;
   while (element) {
@@ -70,29 +70,34 @@ function processTextNode(node) {
     }
     element = element.parentElement;
   }
-  
+
   const tagName = parent.tagName?.toLowerCase();
-  
+
   // Skip elements that don't allow text nodes
   const skipTags = [
     "script", "style", "code", "pre",
     "colgroup", "table", "thead", "tbody", "tfoot", "tr",
-    "select", "datalist", "optgroup"
+    "select", "datalist", "optgroup", "input", "button"
   ];
-  
+
   if (skipTags.includes(tagName)) return;
-  
-  // Store original text if not already stored
-  if (!node._originalText) {
-    node._originalText = node.nodeValue;
+
+  // Store original English text on first encounter
+  if (!node._i18nOriginal) {
+    node._i18nOriginal = node.nodeValue;
   }
-  
-  // Use original text for translation
-  const original = node._originalText;
-  const translated = translate(original);
-  
-  // Only update if different to avoid unnecessary DOM mutations
-  if (translated !== node.nodeValue) {
+
+  // Restore to original English text before translating to new locale
+  // This ensures we always translate from English, not from previous translation
+  if (node.nodeValue !== node._i18nOriginal) {
+    node.nodeValue = node._i18nOriginal;
+  }
+
+  // Translate from English original
+  const translated = translate(node._i18nOriginal);
+
+  // Apply translation if different from English
+  if (translated !== node._i18nOriginal) {
     node.nodeValue = translated;
   }
 }
@@ -130,7 +135,8 @@ export async function initRuntimeI18n() {
   // Process existing DOM
   processElement(document.body);
   
-  // Watch for new nodes
+  // Watch for new nodes added by React
+  let observerTimeout;
   const observer = new MutationObserver((mutations) => {
     mutations.forEach((mutation) => {
       mutation.addedNodes.forEach((node) => {
@@ -141,8 +147,14 @@ export async function initRuntimeI18n() {
         }
       });
     });
+
+    // Debounce re-processing to handle React batched updates
+    clearTimeout(observerTimeout);
+    observerTimeout = setTimeout(() => {
+      processElement(document.body);
+    }, 100);
   });
-  
+
   observer.observe(document.body, {
     childList: true,
     subtree: true,
@@ -151,12 +163,18 @@ export async function initRuntimeI18n() {
 
 // Reload translations when locale changes
 export async function reloadTranslations() {
+  const prevLocale = currentLocale;
   currentLocale = getLocaleFromCookie();
+
+  // Only reload if locale actually changed
+  if (prevLocale === currentLocale) return;
+
   await loadTranslations(currentLocale);
-  
-  // Notify all registered callbacks
-  reloadCallbacks.forEach(callback => callback());
-  
-  // Re-process entire DOM (will use stored original text)
+
+  // Re-process entire DOM
+  // processTextNode will restore from _i18nOriginal and re-translate to new locale
   processElement(document.body);
+
+  // Notify all registered callbacks AFTER DOM is processed
+  reloadCallbacks.forEach(callback => callback());
 }

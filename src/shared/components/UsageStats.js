@@ -261,7 +261,7 @@ export default function UsageStats({ period: periodProp, setPeriod: setPeriodPro
     return {
       ...stats,
       activeRequests: live.activeRequests ?? stats.activeRequests,
-      recentRequests: live.recentRequests ?? stats.recentRequests,
+      recentRequests: stats.recentRequests,
       errorProvider: live.errorProvider ?? stats.errorProvider,
       pending: live.pending ?? stats.pending,
       activeSessions: live.activeSessions ?? stats.activeSessions,

@@ -104,7 +104,7 @@ export default function Sidebar({ onClose }) {
 
         {/* Logo */}
         <div className="px-6 py-4 flex flex-col gap-2">
-          <Link href="/dashboard" className="flex items-center gap-3">
+          <Link href="/dashboard/usage" className="flex items-center gap-3">
             <div className="flex items-center justify-center size-9 rounded-[6px] bg-gradient-to-br from-brand-500 to-brand-700">
               <Icon name="hub" size={20} className="text-white" />
             </div>

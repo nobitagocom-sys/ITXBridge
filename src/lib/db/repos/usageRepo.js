@@ -612,8 +612,17 @@ export async function getUsageStats(period = "all") {
   const apiKeyMap = {};
   for (const k of allApiKeys) apiKeyMap[k.key] = { name: k.name, id: k.id, createdAt: k.createdAt };
 
-  // recentRequests from live history (last 100 entries enough for 20 deduped)
-  const recentRows = db.all(`SELECT timestamp, provider, model, tokens, status FROM usageHistory ORDER BY id DESC LIMIT 100`);
+  // recentRequests from live history, filtered by period
+  let recentCutoff = null;
+  if (period === "today") {
+    const startOfDay = new Date(); startOfDay.setHours(0, 0, 0, 0);
+    recentCutoff = startOfDay.toISOString();
+  } else if (PERIOD_MS[period]) {
+    recentCutoff = new Date(Date.now() - PERIOD_MS[period]).toISOString();
+  }
+  const recentRows = recentCutoff
+    ? db.all(`SELECT timestamp, provider, model, tokens, status FROM usageHistory WHERE timestamp >= ? ORDER BY id DESC LIMIT 100`, [recentCutoff])
+    : db.all(`SELECT timestamp, provider, model, tokens, status FROM usageHistory ORDER BY id DESC LIMIT 100`);
   const seen = new Set();
   const recentRequests = recentRows
     .map((r) => {
